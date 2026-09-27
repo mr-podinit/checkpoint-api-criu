@@ -144,7 +144,6 @@ Once the checkpoint is written to `/checkpoints`, you can package it into a spec
 newcontainer=$(buildah from scratch)
 buildah add $newcontainer checkpoints/$(ls -1 checkpoints/) /
 buildah config --annotation=io.kubernetes.cri-o.annotations.checkpoint.name=counter $newcontainer
-buildah config --annotation=io.kubernetes.cri-o.ImageRef=docker.io/library/nginx:1 $newcontainer
 buildah commit $newcontainer checkpoint-image:latest
 buildah push --tls-verify=false localhost/checkpoint-image:latest localhost:5001/checkpoint-image:latest
 ```
