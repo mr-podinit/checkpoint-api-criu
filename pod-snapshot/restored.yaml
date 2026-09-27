@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-restored
+spec:
+  terminationGracePeriodSeconds: 0
+  volumes:
+  containers:
+  - name: counter
+    image: kind-registry:5000/checkpoint-image:latest
+    command: ["sh", "-c", "echo Hello Kubernetes! && sleep 3600"]
+    imagePullPolicy: Always

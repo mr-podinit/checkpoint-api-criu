@@ -1,0 +1,37 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: checkpoint-role
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "create"]
+  - apiGroups: [""]
+    resources: ["nodes/checkpoint"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: checkpoint-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: checkpoint-role
+subjects:
+  - kind: User
+    name: kube-apiserver-kubelet-client
+    apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-counter
+spec:
+  terminationGracePeriodSeconds: 0
+  volumes:
+  containers:
+  - name: counter
+    image: nginx:1
+    command: ["sh", "-c", "nginx &> /dev/stdout; i=0; while true; do echo \"Running... $i\"; i=$((i+1)); sleep 1; done"]
+---

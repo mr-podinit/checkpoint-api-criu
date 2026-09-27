@@ -1,0 +1,85 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: k8s-1.37
+# containerdConfigPatches:
+# - |-        
+#     [plugins."io.containerd.grpc.v1.cri"]
+#       enable_criu_support = true
+
+# - |-
+#     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]
+#       endpoint = ["http://kind-registry:5000"]
+
+featureGates:
+  # any feature gate can be enabled here with "Name": true
+  # or disabled here with "Name": false
+  # not all feature gates are tested, however
+  "VolumeBindMountOptions": true
+  "EmptyDirVolumeMode": true
+  "StatefulSetRecreateStrategy": true
+  "AtomicWriteVolumeUserFields": true
+  "H2CContainerProbe": true
+
+kubeadmConfigPatches:
+  - |
+    kind: KubeletConfiguration
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    featureGates:
+      VolumeBindMountOptions: true
+
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.37.0-crio
+
+    kubeadmConfigPatches:
+      - |
+        apiVersion: kubeadm.k8s.io/v1beta3
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            feature-gates: "PodLevelCheckpointRestore=true"
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          name: master
+          criSocket: unix:///var/run/crio/crio.sock
+          kubeletExtraArgs:
+            cgroup-driver: cgroupfs
+      - |
+        kind: KubeletConfiguration
+        userNamespaces:
+          idsPerPod: 65536
+        failSwapOn: false
+        memorySwap:
+          swapBehavior: LimitedSwap
+
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          criSocket: unix:///var/run/crio/crio.sock
+          kubeletExtraArgs:
+            cgroup-driver: cgroupfs
+    extraMounts:
+      - containerPath: /etc/containerd/certs.d/
+        hostPath: ./registries/
+      - containerPath: /var/lib/kubelet/checkpoints/
+        hostPath: ../checkpoints/
+
+  - role: worker
+    image: kindest/node:v1.37.0-crio
+    kubeadmConfigPatches:
+      - |
+          kind: JoinConfiguration
+          nodeRegistration:
+            criSocket: unix:///var/run/crio/crio.sock
+            kubeletExtraArgs:
+              cgroup-driver: cgroupfs
+
+    extraMounts:
+      - containerPath: /etc/containerd/certs.d/
+        hostPath: ./registries/
+      - containerPath: /var/lib/kubelet/checkpoints/
+        hostPath: ../checkpoints/
+
+
+networking: {}
